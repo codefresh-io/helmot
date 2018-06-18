@@ -1,1 +1,1 @@
-![Demo](https://raw.githubusercontent.com/codefresh-io/helmot/master/demo.png)
+![Demo](https://imgur.com/a/nvCwiEY)
