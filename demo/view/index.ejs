@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><%=repo.name%></title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="/index.css"/>
+
+    <script src="https://unpkg.com/lodash@4.17.10/lodash.min.js"></script>
+    <script src="https://unpkg.com/kefir@3.8.3/dist/kefir.min.js"></script>
+    <script src="https://unpkg.com/ramda@0.25.0/dist/ramda.min.js"></script>
+    <script src="https://unpkg.com/react@16.4.0/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16.4.0/umd/react-dom.development.js"></script>
+</head>
+<body>
+    <div class="place_file">
+        <div>
+            <i class="fas fa-file-archive fa-lg"></i><p>Drop chart here</p>
+        </div>
+    </div>
+    <main></main>
+    <script>
+        const
+            $uiBus = Kefir.pool(),
+            sendUi = (message)=> $uiBus.plug(Kefir.constant(message)),
+            $repoName = Kefir.constant(`<%=repo.name%>`),
+            $repoId = Kefir.constant(`<%=repo.id%>`),
+            $delete = $uiBus
+                .filter(_.matchesProperty('type', 'delete'))
+                .map(_.property('chart_id'))
+                .flatMap((id)=> Kefir.fromPromise(fetch(<%="`${id}`"%>, { method: "DELETE" })).map(_.constant(id))),
+            $chart = Kefir
+                .fromPromise(fetch('index').then((res)=> res.json()))
+                .map(_.partial(_.map, _, (chart)=> _.assign(chart, { id: chart.digest || Math.random().toString(26).slice(2) })))
+                .merge($uiBus.filter(_.matches({ type: "new_repo" })).map(_.property('repo')))
+                .map((payload)=> ({ type: "add", payload }))
+                .merge($delete.map((payload)=>({ type: "remove", payload })))
+                .scan((prev, { type, payload })=> type === "add" ? prev.concat(payload) : prev.filter(_.negate(_.matches({ id: payload }))), []); //_.flow(_.concat, _.partial(_.uniqBy, _, 'id'))
+
+        Kefir
+            .combine([
+                $repoName.map((name)=> ({ repo: { name } })),
+                $repoId.map((id)=> ({ repo: { id } })),
+                $chart.map((charts)=> ({ charts }))
+            ], (...props)=> _.merge({}, ...props))
+            .onValue((function(){
+                const
+                    mainElement = document.querySelector('main'),
+                    [div, header, main, h1, ul, li, pre, span, button, i] = ["div", "header", "main", "h1", "ul", "li", "pre", "span", "button", "i"].map((tagName)=> (props = {}, positional = [], children = null)=> React.createElement(tagName, props, children, ..._.flatten([positional])));
+
+                return ({ repo, charts })=>
+                    ReactDOM.render(React
+                        .createElement(React.Fragment, [],
+                            header({}, [
+                                h1({}, [i({ className: "fas fa-star" }), " ", repo.name]),
+                                pre({}, repo.id)
+                            ]),
+                            main({}, [
+                                ul({ className: ["charts", !charts.length && "empty"].filter(Boolean).join(' ') },
+                                    [],
+                                    _(charts).chain().groupBy('name').values().map((arr)=> _.assign(_(arr).sortBy(_.flow(_.property('version'), (ver)=> ver.split('.').map(_.toInteger))).last(), { versions: arr.length })).value()
+                                        .map(({ name, version, id, description, icon })=>
+                                            li({ key: id }, [
+                                                span({ className: "name" }, name),
+                                                span({ className: "version" }, version),
+                                                span({ className: "description" }, description),
+                                                div({ className: "icon", style: icon && { backgroundImage: <%="`url(${icon})`"%> }}),
+                                                button({ className: "delete", onClick: ()=> sendUi({ type: "delete", chart_id: id })  }, 'Delete')
+                                            ])
+                                        )
+                                )
+                            ])
+                    ),
+                    mainElement);
+            })());
+
+        // Drag & Drop
+        let dropTarget = document.querySelector('body');
+        Kefir
+            .merge(["dragover", "mouseout", "drop"].map((eventName)=> Kefir.fromEvents(document, eventName).map(()=> eventName === "dragover")))
+            .skipDuplicates()
+            .debounce(100)
+            .onValue((over)=> dropTarget.classList.toggle('drop_hover', over));
+
+        // Prevent drop default behaviour globally
+        ["dragover", "drop"].forEach((eventName)=> window.addEventListener(eventName, (e)=> e.preventDefault()));
+
+        Kefir
+            .fromEvents(document, 'drop')
+            .map((e)=> R.pipe(R.filter(R.propEq('kind', 'file')), R.map((file)=> file.getAsFile()), R.head)(e.dataTransfer.items))
+            .flatMap((file)=> {
+                let xhr = new XMLHttpRequest();
+                return Kefir.fromPromise(new Promise((resolve, reject)=> {
+                    xhr.open('POST', 'chart', true);
+                    xhr.send(file);
+                    xhr.onload = ()=> xhr.status === 200 ? resolve(xhr.response) : reject(xhr.response); //function(e){ console.log(xhr.response); };
+                    xhr.onerror = reject; //function(e){ console.log(xhr.response); };
+                }));
+            })
+            .map((repo)=> Kefir.constant({ type: "new_repo", repo: JSON.parse(repo) }))
+            .onValue($uiBus.plug.bind($uiBus))
+            .onError(console.warn);
+
+    </script>
+</body>
+</html>

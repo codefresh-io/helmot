@@ -1,0 +1,193 @@
+html {
+  //height: 100%;
+
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #efefef;
+    width: 100%;
+    color: #333333;
+
+    > main {
+      margin: 0;
+      padding: 5rem 2rem 0 2rem;
+
+      > header {
+        box-shadow: 0 1px 1px 0 rgba(0,0,0,0.1);
+        box-sizing: border-box;
+        top: 0;
+        left: 0;
+        width: 100%;
+        margin: 0;
+        background-color: #fff;
+        height: 4rem;
+        position: fixed;
+        z-index: 998;
+
+        > h1 {
+          text-align: center;
+          color: #228ae6;
+          font-weight: bold;
+          font-size: 1.5rem;
+          padding: 0.3rem 0.3rem;
+          margin: 0;
+          position: absolute;
+          top: 50%;
+          left: 2rem;
+          transform: translateY(-50%);
+        }
+
+        > pre {
+          display: none;
+          padding: 0.5rem 0.5rem;
+          margin: 0;
+          font-size: 0.6rem;
+        }
+      }
+    }
+
+    > div.place_file {
+
+      > div {
+        box-sizing: border-box;
+        p {
+          margin: 0;
+          padding: 0;
+        }
+        i {
+          display: block;
+          font-size: 5rem;
+          margin: 1rem 0 2rem 0;
+        }
+      }
+
+      text-align: center;
+      background-color: rgba(0,0,0,0.8);
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      z-index: 999;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      display: flex;
+      color: #eee;
+      font-size: 1.2rem;
+      justify-content: center;
+      align-items: center;
+    }
+
+    &.drop_hover {
+      > div.place_file {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+ul.charts {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  &.empty {
+    &:after {
+      text-align: center;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      display: block;
+      margin: 1rem;
+      font-size: 10rem;
+      font-family: "Font Awesome 5 Free";
+      font-style: normal;
+      content: "\f358";
+      transform: translate(-50%, -50%);
+      //content: "Nothing here yet. Drag and drop a chart to add it to your repository.";
+      //text-transform: uppercase;
+
+      color: #dfdfdf;
+    }
+  }
+
+  > li {
+    display: flex;
+    position: relative;
+    background-color: transparent;
+    padding: 0.6rem 0;
+    margin: 0.3rem 0;
+    align-items: center;
+    box-shadow: 1px 1px 1px 0 rgba(0,0,0,0.1);
+    border: solid 1px #bbb;
+    border-left: solid 5px #228ae6;
+
+    > span.name {
+      order: 1;
+      font-weight: bold;
+    }
+
+    > span.version {
+      margin-left: 0.5rem;
+      order: 2;
+      font-size: 0.8rem;
+      font-weight: bold;
+      &:before {
+        content: "("
+      }
+
+      &:after {
+        content: ")"
+      }
+    }
+
+    > span.description {
+      &:before {
+        content: "\00a0\00a0|\00a0\00a0"
+      }
+      order: 3;
+      font-size: 0.8rem;
+      width: 100%;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    > div.icon {
+      background-position: center center;
+      background-repeat: no-repeat;
+      margin: 0 0.7rem;
+      width: 32px;
+      height: 32px;
+      flex-grow: 0;
+      flex-shrink: 0;
+      display: inline-block;
+      background-size: contain;
+      box-sizing: content-box;
+      order: 0;
+      background-image: data-uri('logo.png');
+    }
+
+    > button.delete {
+      order: 4;
+      margin-right: 1rem;
+      flex-grow: 0;
+      flex-shrink: 0;
+      background-color: transparent;
+      padding: 0.3rem;
+      border: solid 1px #aaa;
+      text-transform: uppercase;
+      font-weight: bold;
+      font-size: 0.5rem;
+      transition: background-color 0.2s;
+      cursor: pointer;
+      margin-left: 1rem;
+      &:focus {
+        outline: none;
+      }
+      &:hover {
+        background-color: darken(#aaa, 1%)
+      }
+    }
+  }
+}
